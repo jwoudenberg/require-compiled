@@ -3,10 +3,12 @@
 `require-compiled` works just like regular `require`, except it allows you to require code written in newer versions of JS:
 
 ```js
-  var requireCompiled = require('require-compiled');
+  var requireCompiled = require('require-compiled')();
   var myModule = requireCompiled('./my-module');
   var myModulePath = requireCompiled.resolve('./my-module');
 ```
+
+Only the module directly required this way gets compiled, not its dependencies!
 
 Behind the scenes the module file is compiled to a cache direction.
 Because of this, `require-compiled` does not need to load require hooks into your node process.
