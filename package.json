@@ -1,0 +1,25 @@
+{
+  "name": "require-compiled",
+  "version": "1.0.0",
+  "description": "The easiest way to require babel-compiled modules.",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/jwoudenberg/require-compiled.git"
+  },
+  "keywords": [
+    "babel",
+    "es6",
+    "es7",
+    "es2015"
+  ],
+  "author": "Jasper Woudenberg",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/jwoudenberg/require-compiled/issues"
+  },
+  "homepage": "https://github.com/jwoudenberg/require-compiled#readme"
+}
