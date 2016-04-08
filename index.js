@@ -18,17 +18,27 @@ module.exports = init({ babelrc: true })
 module.exports.babelOptions = init
 
 function init (userOptions) {
+  var cache = {}
+
   function requireCompiledResolve (callingFile, modulePath) {
     var filename = resolveModulePath(callingFile, modulePath)
-    var compilationResult = babel.transformFileSync(
-      filename,
-      mergeBabelOptions(filename, userOptions)
-    )
-    var outputPath = getOutputPath(filename)
-    fs.writeFileSync(
-      outputPath,
-      compilationResult.code
-    )
+
+    // First level cache: This requireCompile instance has seen the module before.
+    if (cache[filename]) {
+      return cache[filename]
+    }
+
+    var code = fs.readFileSync(filename)
+    var babelOptions = mergeBabelOptions(filename, userOptions)
+    var outputPath = getOutputPath(code, babelOptions)
+
+    // Second level cache: The module was already compiled by another requireCompile instance.
+    if (!fs.existsSync(outputPath)) {
+      var compilationResult = babel.transform(code, babelOptions)
+      fs.writeFileSync(outputPath, compilationResult.code)
+    }
+
+    cache[filename] = outputPath
     return outputPath
   }
 
@@ -39,9 +49,13 @@ function init (userOptions) {
     return require(compiledPath)
   }
 
-  requireCompiled.resolve = function (modulePath) {
+  requireCompiled.resolve = function resolve (modulePath) {
     var callingFile = stack()[1].getFileName()
     return requireCompiledResolve(callingFile, modulePath)
+  }
+
+  requireCompiled._clearCache = function clearCache () {
+    cache = {}
   }
 
   return requireCompiled
@@ -55,10 +69,10 @@ function resolveModulePath (callingFile, modulePath) {
   )
 }
 
-function getOutputPath (filename) {
+function getOutputPath (code, babelOptions) {
   return path.join(
     cacheDir,
-    md5hex(filename) + '.js'
+    md5hex(code + JSON.stringify(babelOptions)) + '.js'
   )
 }
 
