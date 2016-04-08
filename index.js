@@ -3,8 +3,6 @@ var findCacheDir = require('find-cache-dir')
 var fs = require('fs')
 var md5hex = require('md5-hex')
 var path = require('path')
-var presetES2015 = require('babel-preset-es2015')
-var presetStage0 = require('babel-preset-stage-0')
 var resolve = require('resolve')
 var sourceMapSupport = require('source-map-support')
 var stack = require('callsite')
@@ -16,14 +14,15 @@ var cacheDir = findCacheDir({
   create: true
 })
 
-module.exports = init
+module.exports = init({ babelrc: true })
+module.exports.babelOptions = init
 
 function init (userOptions) {
   function requireCompiledResolve (callingFile, modulePath) {
     var filename = resolveModulePath(callingFile, modulePath)
     var compilationResult = babel.transformFileSync(
       filename,
-      babelOptions(filename, userOptions)
+      mergeBabelOptions(filename, userOptions)
     )
     var outputPath = getOutputPath(filename)
     fs.writeFileSync(
@@ -63,17 +62,16 @@ function getOutputPath (filename) {
   )
 }
 
-function babelOptions (filename, userOptions) {
-  userOptions = userOptions || {}
-  var userPresets = userOptions.presets || []
-  var userPlugins = userOptions.plugins || []
-  var babelOptions = {
-    filename: filename,
-    sourceMaps: 'inline',
-    ast: false,
-    presets: userPresets.concat([presetStage0, presetES2015]),
-    plugins: userPlugins.concat([transformRuntime, rewriteRequires(filename)])
-  }
+function mergeBabelOptions (filename, userOptions) {
+  var babelOptions = userOptions || {}
+  babelOptions.filename = filename
+  babelOptions.ast = false
+  babelOptions.babelrc = !!userOptions.babelrc
+  babelOptions.sourceMaps = userOptions.sourceMaps || 'inline'
+  babelOptions.plugins = (userOptions.plugins || []).concat([
+    transformRuntime,
+    rewriteRequires(filename)
+  ])
   return babelOptions
 }
 
