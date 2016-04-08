@@ -1,6 +1,7 @@
 # require-compiled
 
-`require-compiled` works just like regular `require`, except it allows you to require code written in newer versions of JS:
+`require-compiled` works just like regular `require`, except it allows you to require code written in newer versions of JS.
+Just add a [.babelrc](https://babeljs.io/docs/usage/babelrc/) file to your project and you're good to go!
 
 ```js
   // Read babel options our of your .babelrc:
@@ -8,7 +9,7 @@
   var myModule = requireCompiled('./my-module');
   var myModulePath = requireCompiled.resolve('./my-module');
 
-  // Pass your babel options explicitly:
+  // Instead of using a .babelrc, you can also pass in your babel options explicitly:
   var requireCompiled = require('require-compiled').babelOptions({ ... });
 ```
 
