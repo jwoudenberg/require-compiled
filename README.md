@@ -1,6 +1,7 @@
 # require-compiled
 [![NPM version](http://img.shields.io/npm/v/require-compiled.svg?style=flat-square)](https://www.npmjs.com/package/require-compiled)
 [![Build status](http://img.shields.io/travis/jwoudenberg/require-compiled/master.svg?style=flat-square)](https://travis-ci.org/jwoudenberg/require-compiled)
+[![Dependencies](https://img.shields.io/david/jwoudenberg/require-compiled.svg?style=flat-square)(https://david-dm.org/jwoudenberg/require-compiled)]
 
 `require-compiled` works just like regular `require`, except it allows you to require code written in newer versions of JS.
 Just add a [.babelrc](https://babeljs.io/docs/usage/babelrc/) file to your project and you're good to go!
