@@ -16,9 +16,14 @@ Just add a [.babelrc](https://babeljs.io/docs/usage/babelrc/) file to your proje
   var requireCompiled = require('require-compiled').babelOptions({ ... });
 ```
 
-Only the module directly required this way gets compiled, not its dependencies!
+Only the module directly required this way gets compiled.
+To compile some of its dependencies as well, mark them with a `compile!` flag:
 
-Behind the scenes the module file is compiled to a cache direction.
+```js
+  var myChildModule = require('compile!./child')
+```
+
+Behind the scenes the the modules required this way are compiled into a cache directory.
 Because of this, `require-compiled` does not need to load require hooks into your node process.
 `require-compiled` does load [node-source-map-support](https://github.com/evanw/node-source-map-support) to give you nice stack traces in your errors.
 

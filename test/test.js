@@ -110,6 +110,17 @@ test('multiple requireCompile instances share a cache', function (t) {
   })
 })
 
+test('dependencies can be compiled using compile! flag', function (t) {
+  clearCache()
+  t.plan(3)
+  t.doesNotThrow(function () {
+    var requireCompiled = require('../')
+    var compiledModule = requireCompiled('./fixtures/circular-a')
+    t.equal(compiledModule.a, 'foo')
+    t.equal(compiledModule.b, 'bar')
+  })
+})
+
 function clearCache () {
   // Clear first level cache.
   require('../')._clearCache()

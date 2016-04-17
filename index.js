@@ -32,13 +32,15 @@ function init (userOptions) {
     var babelOptions = mergeBabelOptions(filename, userOptions)
     var outputPath = getOutputPath(code, babelOptions)
 
+    // Cache output path before compilation, to allow circular dependencies between to-be-compiled files.
+    cache[filename] = outputPath
+
     // Second level cache: The module was already compiled by another requireCompile instance.
     if (!fs.existsSync(outputPath)) {
       var compilationResult = babel.transform(code, babelOptions)
       fs.writeFileSync(outputPath, compilationResult.code)
     }
 
-    cache[filename] = outputPath
     return outputPath
   }
 
@@ -47,6 +49,64 @@ function init (userOptions) {
     var compiledPath = requireCompiledResolve(callingFile, modulePath)
     installSourceMapResultOnce()
     return require(compiledPath)
+  }
+
+  function resolveModulePath (callingFile, modulePath) {
+    var basedir = path.dirname(callingFile)
+    return resolve.sync(
+      modulePath,
+      { basedir: basedir }
+    )
+  }
+
+  function getOutputPath (code, babelOptions) {
+    return path.join(
+      cacheDir,
+      md5hex(code + JSON.stringify(babelOptions)) + '.js'
+    )
+  }
+
+  function mergeBabelOptions (filename, userOptions) {
+    var babelOptions = userOptions ? Object.assign({}, userOptions) : {}
+    babelOptions.filename = filename
+    babelOptions.ast = false
+    babelOptions.babelrc = !!userOptions.babelrc
+    babelOptions.sourceMaps = userOptions.sourceMaps || 'inline'
+    babelOptions.plugins = (userOptions.plugins || []).concat([
+      transformRuntime,
+      rewriteRequires(filename)
+    ])
+    return babelOptions
+  }
+
+  // Rewrite requires to use absolute paths.
+  // This way tests the compiled tests can still be ran from a different directory.
+  function rewriteRequires (filename) {
+    var basedir = path.dirname(filename)
+    return wrapListener(
+      function (nodePath) {
+        if (nodePath.isLiteral() && !path.isAbsolute(nodePath.node.value)) {
+          var match = nodePath.node.value.match(/^compile!(.+)$/)
+          nodePath.node.value = match
+            ? nodePath.node.value = requireCompiledResolve(filename, match[1])
+            : nodePath.node.value = resolve.sync(nodePath.node.value, { basedir: basedir })
+        }
+      },
+      'rewrite-require',
+      {
+        generated: true,
+        require: true,
+        import: true
+      }
+    )
+  }
+
+  var sourceMapSupportInstalled = false
+  function installSourceMapResultOnce () {
+    if (!sourceMapSupportInstalled) {
+      sourceMapSupport.install()
+      sourceMapSupportInstalled = true
+    }
   }
 
   requireCompiled.resolve = function resolve (modulePath) {
@@ -59,57 +119,4 @@ function init (userOptions) {
   }
 
   return requireCompiled
-}
-
-function resolveModulePath (callingFile, modulePath) {
-  var basedir = path.dirname(callingFile)
-  return resolve.sync(
-    modulePath,
-    { basedir: basedir }
-  )
-}
-
-function getOutputPath (code, babelOptions) {
-  return path.join(
-    cacheDir,
-    md5hex(code + JSON.stringify(babelOptions)) + '.js'
-  )
-}
-
-function mergeBabelOptions (filename, userOptions) {
-  var babelOptions = userOptions || {}
-  babelOptions.filename = filename
-  babelOptions.ast = false
-  babelOptions.babelrc = !!userOptions.babelrc
-  babelOptions.sourceMaps = userOptions.sourceMaps || 'inline'
-  babelOptions.plugins = (userOptions.plugins || []).concat([
-    transformRuntime,
-    rewriteRequires(filename)
-  ])
-  return babelOptions
-}
-
-// Rewrite requires to use absolute paths.
-// This way tests the compiled tests can still be ran from a different directory.
-function rewriteRequires (filename) {
-  var basedir = path.dirname(filename)
-  return wrapListener(
-    function (path) {
-      path.node.value = resolve.sync(path.node.value, { basedir: basedir })
-    },
-    'rewrite-require',
-    {
-      generated: true,
-      require: true,
-      import: true
-    }
-  )
-}
-
-var sourceMapSupportInstalled = false
-function installSourceMapResultOnce () {
-  if (!sourceMapSupportInstalled) {
-    sourceMapSupport.install()
-    sourceMapSupportInstalled = true
-  }
 }
